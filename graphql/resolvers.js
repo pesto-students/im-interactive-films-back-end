@@ -32,6 +32,7 @@ const resolvers = {
       return mapsKeys;
     },
 
+<<<<<<< Updated upstream
     movies: async () => {
       const data = await fetch(`${baseDBURL}/movies.json`);
       const dataJson = await data.json();
@@ -40,15 +41,97 @@ const resolvers = {
         const movieData = dataJson[item];
         const graphqlMovie = movie(movieData);
         return graphqlMovie;
+=======
+    movies: async (_, { userId, queryText }) => {
+      let ref = firebaseDB.ref("movies");
+
+      if (!_isEmpty(queryText)) {
+        // Only case sensitive search on title supported for now as it is not supported by DB
+        ref = ref
+          .orderByChild("title")
+          .startAt(queryText)
+          .endAt(queryText + "\uf8ff");
+      } else if (!_isEmpty(userId)) {
+        ref = ref.orderByChild("editorId").equalTo(userId);
+      }
+
+      await ref.once("value", (snapshot) => {
+        if (snapshot.empty) {
+          console.log("No matching movies.");
+          return;
+        }
+        res = snapshot.val();
+      });
+      return res && Object.values(res);
+    },
+
+    getNewReleases: async (_, params) => {
+      let ref = firebaseDB.ref().child("movies").orderByChild("createdAt");
+
+      if (params && params.limit) {
+        ref = ref.limitToFirst(params.limit);
+      }
+
+      let res = [];
+      await ref.once("child_added", (snapshot) => {
+        if (snapshot.empty) {
+          console.log("No matching movies.");
+          return;
+        }
+        const movieData = snapshot.val();
+        movieData.isPublished &&
+          !movieData.isFeatured &&
+          res.push(snapshot.val());
+>>>>>>> Stashed changes
       });
       return mapsKeys;
     },
 
     movie: async (_, {id} ) => {
 
+<<<<<<< Updated upstream
       const ref =  firebaseDB
                     .ref()
                     .child('movies');
+=======
+      if (params && params.limit) {
+        ref = ref.limitToFirst(params.limit);
+      }
+
+      let res = [];
+      await ref.once("child_added", (snapshot) => {
+        if (snapshot.empty) {
+          console.log("No matching movies.");
+          return;
+        }
+        const movieData = snapshot.val();
+        movieData.isPublished &&
+          movieData.isFeatured &&
+          res.push(snapshot.val());
+      });
+      return res;
+    },
+
+    // searchByTitle: async (_, { queryText }) => {
+    //   const ref = firebaseDB.ref("movies");
+    //   let res;
+    //   await ref
+    //     .orderByChild("title")
+    //     .startAt(queryText)
+    //     .endAt(queryText + "\uf8ff")
+    //     .once("value", (snapshot) => {
+    //       if (snapshot.empty) {
+    //         console.log("No matching movies.");
+    //         return;
+    //       }
+    //       res = snapshot.val();
+    //     });
+    //   return res && Object.values(res);
+    // },
+
+    movie: async (_, { id }) => {
+      const ref = firebaseDB.ref().child("movies");
+>>>>>>> Stashed changes
       let res;
       await ref
             .orderByChild("id")
@@ -64,35 +147,35 @@ const resolvers = {
     },
 
     filterMovies: async (_, { filter }) => {
-
       const key = filter.key;
-      let value
-      if (key === "isPublished" || key === "isFeatured" ) {
+      let value;
+      if (key === "isPublished" || key === "isFeatured") {
         value = JSON.parse(filter.value);
       } else {
-        value = filter.value
+        value = filter.value;
       }
 
-      const ref =  firebaseDB
-                    .ref()
-                    .child('movies');
+      const ref = firebaseDB.ref().child("movies");
       let res;
       if (key) {
         await ref
-              .orderByChild(key)
-              .equalTo(value)
-              .once('value', (snapshot) => {
-                  if (snapshot.empty) {
-                    console.log('No matching movies.');
-                    return;
-                  }
-                  res = snapshot.val();
-                });
+          .orderByChild(key)
+          .equalTo(value)
+          .once("value", (snapshot) => {
+            if (snapshot.empty) {
+              console.log("No matching movies.");
+              return;
+            }
+            res = snapshot.val();
+          });
       }
-      return res && Object.values(res).reduce((filterResult, movieData) => {
-        filterResult.push(movie(movieData));
-        return filterResult;
-      }, []);
+      return (
+        res &&
+        Object.values(res).reduce((filterResult, movieData) => {
+          filterResult.push(movie(movieData));
+          return filterResult;
+        }, [])
+      );
     },
 
     hotspot: async (_, { movieId, id }) => {

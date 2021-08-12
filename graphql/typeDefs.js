@@ -179,13 +179,23 @@ const typeDefs = `
   type Query {
     user(uid: ID!): User,
     users:[User],
-    movies:[Movie],
+    movies(
+      queryText: String,
+      userId: String
+    ):[Movie],
     movie(id: ID!): Movie,
     filterMovies(
       filter: MovieFilterParams
     ): [Movie],
+<<<<<<< Updated upstream
     hotspot(id: ID!, movieId: ID!): Hotspot
     overlay(id: ID!, movieId: ID!): Overlay
+=======
+    getNewReleases(limit: Int): [Movie],
+    getFeatured(limit: Int): [Movie],
+    hotspot(id: ID!, movieId: ID!): Hotspot,
+    overlay(id: ID!, movieId: ID!): Overlay,
+>>>>>>> Stashed changes
     trigger(id: ID!, movieId: ID!): Trigger
   }
 
